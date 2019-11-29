@@ -5,9 +5,9 @@ if(EOSIO_CDT_ROOT STREQUAL "" OR NOT EOSIO_CDT_ROOT)
 endif()
 
 ExternalProject_Add(
-   tlosrecoverer_project
+   tlosrecovery_project
    SOURCE_DIR ${CMAKE_SOURCE_DIR}/src
-   BINARY_DIR ${CMAKE_BINARY_DIR}/tlosrecoverer
+   BINARY_DIR ${CMAKE_BINARY_DIR}/tlosrecovery
    CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=${EOSIO_CDT_ROOT}/lib/cmake/eosio.cdt/EosioWasmToolchain.cmake
    UPDATE_COMMAND ""
    PATCH_COMMAND ""

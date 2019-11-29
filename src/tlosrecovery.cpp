@@ -20,11 +20,12 @@
 #include <eosio.system/eosio.system.hpp>
 #include <eosio.token/eosio.token.hpp>
 
-#define DEBUG(...) print("tlosrecoverer: ", __VA_ARGS__, "\n");
+/* We can leave debug messages on, since that could help solving problems on Mainnet */
+#define DEBUG(...) print("tlosrecovery: ", __VA_ARGS__, "\n");
 
 using namespace eosio;
 
-class [[eosio::contract]] tlosrecoverer : public contract {
+class [[eosio::contract]] tlosrecovery : public contract {
    public:
       using contract::contract;
 
@@ -60,6 +61,8 @@ class [[eosio::contract]] tlosrecoverer : public contract {
             /* we use _this, _this scope for simplicity */
             unstake_accounts unstaking(get_self(), get_self().value);
 
+            /* It would be a fun idea to get the account to pay (since we will be
+               privileged), but that would have complicated testing. */
             unstaking.emplace(get_self(), [&](auto& a) {
                a.account_name = account_name;
             });
