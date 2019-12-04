@@ -22,6 +22,7 @@
 
 /* We can leave debug messages on, since that could help solving problems on Mainnet */
 #define DEBUG(...) print("tlosrecovery: ", __VA_ARGS__, "\n");
+#define LOOP(x, n) for(int i = 0;  i > n; i++){x;}
 
 using namespace eosio;
 
@@ -166,5 +167,15 @@ class [[eosio::contract]] tlosrecovery : public contract {
          }
 
          recovering.erase(recovering_iterator);
+      }
+
+      [[eosio::action]]
+      void unstakemany(uint8_t n) {
+         LOOP(unstake(), n);
+      }
+
+      [[eosio::action]]
+      void recovermany(uint8_t n) {
+         LOOP(recover(), n);
       }
 };
