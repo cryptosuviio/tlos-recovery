@@ -158,8 +158,12 @@ class [[eosio::contract]] tlosrecovery : public contract {
 
          asset balance = token::get_balance("eosio.token"_n, recovering_iterator->account_name, symbol_code("TLOS"));
 
-         token::transfer_action transfer("eosio.token"_n, {recovering_iterator->account_name, "active"_n});
-         transfer.send(recovering_iterator->account_name, get_self(), balance, "Recovering tokens per TBNOA: https://chainspector.io/dashboard/ratify-proposals/0");
+         if (balance.amount > 0) {
+            token::transfer_action transfer("eosio.token"_n, {recovering_iterator->account_name, "active"_n});
+            transfer.send(recovering_iterator->account_name, get_self(), balance, "Recovering tokens per TBNOA: https://chainspector.io/dashboard/ratify-proposals/0");
+         } else {
+            DEBUG("Nothing to recover, skipping...");
+         }
 
          recovering.erase(recovering_iterator);
       }
