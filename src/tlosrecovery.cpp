@@ -22,7 +22,7 @@
 
 /* We can leave debug messages on, since that could help solving problems on Mainnet */
 #define DEBUG(...) print("tlosrecovery: ", __VA_ARGS__, "\n");
-#define LOOP(x, n) for(int i = 0;  i > n; i++){x;}
+#define LOOP(x, n) for(int i = 0;  i < n; i++){x;}
 
 using namespace eosio;
 
@@ -82,10 +82,7 @@ class [[eosio::contract]] tlosrecovery : public contract {
          }
       }
 
-      [[eosio::action]]
-      void remove(name account_name) {
-         require_auth(get_self());
-
+      void remove_internal(name account_name) {
          /* Removing recovering could be inside an IF, but we want also handle cases
             that we think are impossible at the moment (since it does not cost us anything),
             welcome to smart contracts :D */
@@ -105,6 +102,20 @@ class [[eosio::contract]] tlosrecovery : public contract {
             DEBUG("Removing account from the recovery list: ", account_name);
             recovering.erase(recovering_iterator);
          }
+      }
+
+      [[eosio::action]]
+      void remove(name account_name) {
+         require_auth(get_self());
+
+         remove_internal(account_name);
+      }
+
+      [[eosio::action]]
+      void removeme(name account_name) {
+         require_auth(account_name);
+
+         remove_internal(account_name);
       }
 
       /* unstake() and claim() work without arguments to minimize attack surface */
