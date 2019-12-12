@@ -48,12 +48,10 @@ class [[eosio::contract]] tlosrecovery : public contract {
          a single use contract, autonomous function is not needed. Hence, require_auth().
       */
 
-      [[eosio::action]]
-      void add(name account_name) {
-         require_auth(get_self());
-
+      void add_internal(name account_name) {
          /* Here we check should we place the account to the unstaking list,
             or directly to the token recovery list */
+
          eosiosystem::del_bandwidth_table staked("eosio"_n, account_name.value);
          auto staked_iterator = staked.find(account_name.value);
          if (staked_iterator != staked.end()) {
@@ -81,6 +79,15 @@ class [[eosio::contract]] tlosrecovery : public contract {
          }
       }
 
+      [[eosio::action]]
+      void add(std::vector<name> account_names) {
+         require_auth(get_self());
+
+         for (auto& account_name : account_names) {
+            add_internal(account_name);
+         }
+      }
+
       void remove_internal(name account_name) {
          /* Removing recovering could be inside an IF, but we want also handle cases
             that we think are impossible at the moment (since it does not cost us anything),
@@ -104,10 +111,12 @@ class [[eosio::contract]] tlosrecovery : public contract {
       }
 
       [[eosio::action]]
-      void remove(name account_name) {
+      void remove(std::vector<name> account_names) {
          require_auth(get_self());
 
-         remove_internal(account_name);
+         for (auto& account_name : account_names) {
+            remove_internal(account_name);
+         }
       }
 
       [[eosio::action]]
