@@ -22,7 +22,6 @@
 
 /* We can leave debug messages on, since that could help solving problems on Mainnet */
 #define DEBUG(...) print("tlosrecovery: ", __VA_ARGS__, "\n");
-#define LOOP(x, n) for(int i = 0;  i < n; i++){x;}
 
 using namespace eosio;
 
@@ -120,37 +119,43 @@ class [[eosio::contract]] tlosrecovery : public contract {
 
       /* unstake() and claim() work without arguments to minimize attack surface */
       [[eosio::action]]
-      void unstake() {
-         DEBUG("Unstaking the next account from the list...");
+      void unstake(uint8_t n) {
+         int i;
 
+         DEBUG("Unstaking the next account from the list...");
          unstake_accounts unstaking(get_self(), get_self().value);
 
          auto unstaking_iterator = unstaking.begin();
-         check(unstaking_iterator != unstaking.end(), "No accounts to unstake");
 
-         DEBUG("Unstaking: ", unstaking_iterator->account_name);
-         eosiosystem::del_bandwidth_table staked("eosio"_n, unstaking_iterator->account_name.value);
-         auto staked_iterator = staked.find(unstaking_iterator->account_name.value);
-         if(staked_iterator != staked.end()) {
-            /* We are using inline actions, since deferred actions will be depracated */
-            eosiosystem::system_contract::undelegatebw_action unstaker("eosio"_n, {unstaking_iterator->account_name, "active"_n});
-            unstaker.send(unstaking_iterator->account_name, unstaking_iterator->account_name, staked_iterator->net_weight, staked_iterator->cpu_weight);
-            DEBUG("Sent inline transaction eosio::undelegate()...");
-         } else {
-            DEBUG("Nothing to unstake? Skipping...");
+         for(i = 0;  i < n && unstaking_iterator != unstaking.end(); i++) {
+            DEBUG("Unstaking: ", unstaking_iterator->account_name);
+            eosiosystem::del_bandwidth_table staked("eosio"_n, unstaking_iterator->account_name.value);
+            auto staked_iterator = staked.find(unstaking_iterator->account_name.value);
+            if(staked_iterator != staked.end()) {
+               /* We are using inline actions, since deferred actions will be depracated */
+               eosiosystem::system_contract::undelegatebw_action unstaker("eosio"_n, {unstaking_iterator->account_name, "active"_n});
+               unstaker.send(unstaking_iterator->account_name, unstaking_iterator->account_name, staked_iterator->net_weight, staked_iterator->cpu_weight);
+               DEBUG("Sent inline transaction eosio::undelegate()...");
+            } else {
+               DEBUG("Nothing to unstake? Skipping...");
+            }
+
+            recover_accounts recovering(get_self(), get_self().value);
+
+            recovering.emplace(get_self(), [&](auto& a) {
+               a.account_name = unstaking_iterator->account_name;
+            });
+
+            unstaking_iterator = unstaking.erase(unstaking_iterator);
          }
 
-         recover_accounts recovering(get_self(), get_self().value);
-
-         recovering.emplace(get_self(), [&](auto& a) {
-            a.account_name = unstaking_iterator->account_name;
-         });
-
-         unstaking.erase(unstaking_iterator);
+         check(i > 0, "No accounts to unstake");
       }
 
       [[eosio::action]]
-      void recover() {
+      void recover(uint8_t n) {
+         int i;
+
          DEBUG("Recovering tokens from the next account from the list...");
          /* REMEMBER: Remember to check that unstaking is done */
          recover_accounts recovering(get_self(), get_self().value);
@@ -160,33 +165,26 @@ class [[eosio::contract]] tlosrecovery : public contract {
          /* The list is implicitly ordered for us, since both of the tables
             have "name" as their primary key. That's why we don't need to care
             that unstaking delay would disturb us? */
-         check(recovering_iterator != recovering.end(), "No accounts to recover");
-         DEBUG("Recover TLOS from: ", recovering_iterator->account_name);
+         for(i = 0;  i < n && recovering_iterator != recovering.end(); i++) {
+            DEBUG("Recover TLOS from: ", recovering_iterator->account_name);
 
-         /* Unstaking must not be in progress */
-         eosiosystem::refunds_table refunding("eosio"_n, recovering_iterator->account_name.value);
-         auto refunding_iterator = refunding.find(recovering_iterator->account_name.value);
-         check(refunding_iterator == refunding.end(), "Unstaking still in progress");
+            /* Unstaking must not be in progress */
+            eosiosystem::refunds_table refunding("eosio"_n, recovering_iterator->account_name.value);
+            auto refunding_iterator = refunding.find(recovering_iterator->account_name.value);
+            check(refunding_iterator == refunding.end(), "Unstaking still in progress");
 
-         asset balance = token::get_balance("eosio.token"_n, recovering_iterator->account_name, symbol_code("TLOS"));
+            asset balance = token::get_balance("eosio.token"_n, recovering_iterator->account_name, symbol_code("TLOS"));
 
-         if (balance.amount > 0) {
-            token::transfer_action transfer("eosio.token"_n, {recovering_iterator->account_name, "active"_n});
-            transfer.send(recovering_iterator->account_name, get_self(), balance, "Recovering tokens per TBNOA: https://chainspector.io/dashboard/ratify-proposals/0");
-         } else {
-            DEBUG("Nothing to recover, skipping...");
+            if (balance.amount > 0) {
+               token::transfer_action transfer("eosio.token"_n, {recovering_iterator->account_name, "active"_n});
+               transfer.send(recovering_iterator->account_name, get_self(), balance, "Recovering tokens per TBNOA: https://chainspector.io/dashboard/ratify-proposals/0");
+            } else {
+               DEBUG("Nothing to recover, skipping...");
+            }
+
+            recovering_iterator = recovering.erase(recovering_iterator);
          }
 
-         recovering.erase(recovering_iterator);
-      }
-
-      [[eosio::action]]
-      void unstakemany(uint8_t n) {
-         LOOP(unstake(), n);
-      }
-
-      [[eosio::action]]
-      void recovermany(uint8_t n) {
-         LOOP(recover(), n);
+         check(i > 0, "No accounts to recover");
       }
 };
