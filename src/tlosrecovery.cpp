@@ -60,7 +60,8 @@ class [[eosio::contract]] tlosrecovery : public contract {
             unstake_accounts unstaking(get_self(), get_self().value);
 
             /* It would be a fun idea to get the account to pay (since we will be
-               privileged), but that would have complicated testing. */
+               privileged), but that would have complicated testing.
+               And would need total refactoring of the contract. */
             unstaking.emplace(get_self(), [&](auto& a) {
                a.account_name = account_name;
             });
@@ -126,7 +127,7 @@ class [[eosio::contract]] tlosrecovery : public contract {
          remove_internal(account_name);
       }
 
-      /* unstake() and claim() work without arguments to minimize attack surface */
+      /* unstake() and recover() work without account names to minimize attack surface */
       [[eosio::action]]
       void unstake(uint8_t n) {
          int i;
