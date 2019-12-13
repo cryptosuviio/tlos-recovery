@@ -14,7 +14,7 @@ The contract is meant to be used as follows:
 4. Any account can then start calling unstake() and recover() (after 3 days)
 
 ## Current implementation
-Currently the contract is deployed to "tlosrecovery" on both, Telos Testnet and Telos Mainnet:
+Currently the contract is deployed to "tlosrecovery" on Stagenet, Telos Testnet and will be on Telos Mainnet after review:
  * https://telos-test.bloks.io/account/tlosrecovery
  * https://telos.bloks.io/account/tlosrecovery
  
