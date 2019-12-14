@@ -181,7 +181,13 @@ class [[eosio::contract]] tlosrecovery : public contract {
             /* Unstaking must not be in progress */
             eosiosystem::refunds_table refunding("eosio"_n, recovering_iterator->account_name.value);
             auto refunding_iterator = refunding.find(recovering_iterator->account_name.value);
-            check(refunding_iterator == refunding.end(), "Unstaking still in progress");
+            if(refunding_iterator != refunding.end()) {
+               /* We try to refund, if successful, we will skip the account for now. If not successful, we will bail out */
+               eosiosystem::system_contract::refund_action refund("eosio"_n, {recovering_iterator->account_name, "active"_n});
+               refund.send(recovering_iterator->account_name);
+               DEBUG("eosio::refund() had to be called, skipping this account for now...");
+               continue;
+            }
 
             asset balance = token::get_balance("eosio.token"_n, recovering_iterator->account_name, symbol_code("TLOS"));
 
