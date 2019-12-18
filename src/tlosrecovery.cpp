@@ -54,7 +54,7 @@ class [[eosio::contract]] tlosrecovery : public contract {
 
          eosiosystem::del_bandwidth_table staked("eosio"_n, account_name.value);
          auto staked_iterator = staked.find(account_name.value);
-         if (staked_iterator != staked.end()) {
+         if(staked_iterator != staked.end()) {
             /* We put the account to the unstaking list */
             /* we use _this, _this scope for simplicity */
             unstake_accounts unstaking(get_self(), get_self().value);
@@ -80,11 +80,22 @@ class [[eosio::contract]] tlosrecovery : public contract {
          }
       }
 
+      /* There is one known corner case with add():
+         if account is added while staked, and then the account unstakes by
+         themselves, and the contract operator adds the account again, then
+         unstake() would not proceed until the account is removed (since it's
+         already in the recover table, where it tries to re-add the account).
+
+         However, privilege should not be given to the contract until adding is
+         done. Otherwise it would be a huge security vulnerability. After this
+         contract is privileged, the account lists should be modified only
+         by BP multisig.
+       */
       [[eosio::action]]
       void add(std::vector<name> account_names) {
          require_auth(get_self());
 
-         for (auto& account_name : account_names) {
+         for(auto& account_name : account_names) {
             add_internal(account_name);
          }
       }
@@ -115,7 +126,7 @@ class [[eosio::contract]] tlosrecovery : public contract {
       void remove(std::vector<name> account_names) {
          require_auth(get_self());
 
-         for (auto& account_name : account_names) {
+         for(auto& account_name : account_names) {
             remove_internal(account_name);
          }
       }
@@ -191,7 +202,7 @@ class [[eosio::contract]] tlosrecovery : public contract {
 
             asset balance = token::get_balance("eosio.token"_n, recovering_iterator->account_name, symbol_code("TLOS"));
 
-            if (balance.amount > 0) {
+            if(balance.amount > 0) {
                token::transfer_action transfer("eosio.token"_n, {recovering_iterator->account_name, "active"_n});
                transfer.send(recovering_iterator->account_name, get_self(), balance, "Recovering tokens per TBNOA: https://chainspector.io/dashboard/ratify-proposals/0");
             } else {
