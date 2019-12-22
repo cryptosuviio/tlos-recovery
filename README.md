@@ -18,4 +18,4 @@ Currently the contract is deployed to "tlosrecovery" on Stagenet, Telos Testnet 
  * https://telos-test.bloks.io/account/tlosrecovery
  * https://telos.bloks.io/account/tlosrecovery
  
-With codehash `6c28105d198cdf78096d49cdc577120d8f02c8a92d44675a942312ee88c5cefa`
+With codehash `12c9b24bddf18df453ac0831075b6812158b8f619b568d43ab9159fdd9d6da8a`
