@@ -197,6 +197,7 @@ class [[eosio::contract]] tlosrecovery : public contract {
                eosiosystem::system_contract::refund_action refund("eosio"_n, {recovering_iterator->account_name, "active"_n});
                refund.send(recovering_iterator->account_name);
                DEBUG("eosio::refund() had to be called, skipping this account for now...");
+               recovering_iterator++;
                continue;
             }
 
